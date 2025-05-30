@@ -414,6 +414,8 @@ var vite_config_default = defineConfig({
   // /client을 루트로 설정
   base: "/Toy/",
   // GitHub Pages 경로
+  publicDir: "public",
+  // 명시적으로 /client/public 폴더를 사용
   resolve: {
     alias: {
       "@": path3.resolve(__dirname, "client/src"),
