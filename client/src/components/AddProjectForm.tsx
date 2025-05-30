@@ -1,22 +1,19 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { projectCategories } from "@/lib/utils";
-import { insertProjectSchema, InsertProject } from "@shared/schema";
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { projectCategories } from '@/lib/utils';
+import { insertProjectSchema } from '@shared/schema';
 
-// Extend schema to handle File type for thumbnail
 const formSchema = insertProjectSchema.extend({
-  thumbnail: z.instanceof(File).optional(), // Add optional file validation
+  thumbnail: z.instanceof(FileList).transform(list => list.item(0)),
 });
 
-type FormValues = Omit<InsertProject, "thumbnail"> & {
-  thumbnail?: File;
-};
+type FormValues = z.infer<typeof formSchema>;
 
 export default function AddProjectForm() {
   const { toast } = useToast();
@@ -33,66 +30,68 @@ export default function AddProjectForm() {
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      category: "",
-      tag: "",
-      url: "",
-      videoLength: undefined,
+      title: '',
+      description: '',
+      category: '',
+      tag: '',
+      url: '',
     },
   });
 
-  const watchCategory = watch("category");
+  // Watch for changes to display dynamic UI elements
+  const watchCategory = watch('category');
 
   const createProject = useMutation({
     mutationFn: async (data: FormValues) => {
       setIsUploading(true);
+      
       try {
+        // Create form data for file upload
         const formData = new FormData();
-        formData.append("title", data.title);
-        formData.append("description", data.description);
-        formData.append("category", data.category);
-        formData.append("tag", data.tag || "");
-        formData.append("url", data.url);
-
+        formData.append('title', data.title);
+        formData.append('description', data.description);
+        formData.append('category', data.category);
+        formData.append('tag', data.tag || '');
+        formData.append('url', data.url);
+        
         if (data.thumbnail) {
-          formData.append("thumbnail", data.thumbnail);
+          formData.append('thumbnail', data.thumbnail);
         }
-
-        if (data.category === "video" && data.videoLength) {
-          formData.append("videoLength", data.videoLength);
+        
+        // Special fields for videos
+        if (data.category === 'video' && data.videoLength) {
+          formData.append('videoLength', data.videoLength);
         }
-
-        const response = await apiRequest("/api/projects", {
-          method: "POST",
+        
+        const response = await fetch('/api/projects', {
+          method: 'POST',
           body: formData,
-          credentials: "include",
+          credentials: 'include',
         });
-
+        
         if (!response.ok) {
-          throw new Error("Failed to create project");
+          throw new Error('Failed to create project');
         }
-
-        return response.json();
+        
+        return await response.json();
       } finally {
         setIsUploading(false);
       }
     },
     onSuccess: () => {
       toast({
-        title: "Project added",
-        description: "Your project has been added successfully.",
+        title: 'Project added',
+        description: 'Your project has been added successfully.',
       });
       reset();
       setThumbnailPreview(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description:
-          error.message || "Failed to add project. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to add project. Please try again.',
+        variant: 'destructive',
       });
     },
   });
@@ -104,7 +103,7 @@ export default function AddProjectForm() {
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue("thumbnail", file);
+      setValue('thumbnail', e.target.files as unknown as FileList);
       const reader = new FileReader();
       reader.onloadend = () => {
         setThumbnailPreview(reader.result as string);
@@ -114,10 +113,7 @@ export default function AddProjectForm() {
   };
 
   return (
-    <section
-      id="admin"
-      className="py-16 px-4 bg-cyber-black border-t border-b border-neon-cyan/30"
-    >
+    <section id="admin" className="py-16 px-4 bg-cyber-black border-t border-b border-neon-cyan/30">
       <div className="container mx-auto max-w-4xl">
         <div className="mb-12 text-center">
           <h2 className="text-3xl md:text-4xl font-orbitron font-bold inline-block">
@@ -125,153 +121,110 @@ export default function AddProjectForm() {
             <span className="text-white"> DASHBOARD</span>
             <div className="h-[2px] w-full bg-gradient-to-r from-neon-cyan to-neon-magenta mt-2"></div>
           </h2>
-          <p className="text-cyber-text/80 mt-4">
-            Simple interface to quickly add new works to your catalog.
-          </p>
+          <p className="text-cyber-text/80 mt-4">Simple interface to quickly add new works to your catalog.</p>
         </div>
-
+        
         <div className="bg-cyber-slate border border-neon-cyan/30 rounded-sm p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  className="block text-neon-cyan text-sm font-orbitron mb-2"
-                  htmlFor="project-title"
-                >
+                <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-title">
                   PROJECT TITLE
                 </label>
                 <input
-                  {...register("title")}
+                  {...register('title')}
                   id="project-title"
                   placeholder="Enter project title"
                   className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
                 />
                 {errors.title && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.title.message}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.title.message as string}</p>
                 )}
               </div>
-
+              
               <div>
-                <label
-                  className="block text-neon-cyan text-sm font-orbitron mb-2"
-                  htmlFor="project-category"
-                >
+                <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-category">
                   CATEGORY
                 </label>
                 <select
-                  {...register("category")}
+                  {...register('category')}
                   id="project-category"
                   className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
                 >
                   <option value="">Select category</option>
-                  {projectCategories
-                    .filter((c) => c.value !== "all")
-                    .map((category) => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
+                  {projectCategories.filter(c => c.value !== 'all').map(category => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
                 </select>
                 {errors.category && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.category.message}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.category.message as string}</p>
                 )}
               </div>
             </div>
-
+            
             <div>
-              <label
-                className="block text-neon-cyan text-sm font-orbitron mb-2"
-                htmlFor="project-description"
-              >
+              <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-description">
                 DESCRIPTION
               </label>
               <textarea
-                {...register("description")}
+                {...register('description')}
                 id="project-description"
                 rows={4}
                 placeholder="Enter project description"
                 className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
               />
               {errors.description && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.description.message}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{errors.description.message as string}</p>
               )}
             </div>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  className="block text-neon-cyan text-sm font-orbitron mb-2"
-                  htmlFor="project-tag"
-                >
+                <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-tag">
                   TAG (OPTIONAL)
                 </label>
                 <input
-                  {...register("tag")}
+                  {...register('tag')}
                   id="project-tag"
                   placeholder="Enter tag (e.g. INTERACTIVE, PRODUCTIVITY)"
                   className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
                 />
-                {errors.tag && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.tag.message}
-                  </p>
-                )}
               </div>
-
-              {watchCategory === "video" && (
+              
+              {watchCategory === 'video' && (
                 <div>
-                  <label
-                    className="block text-neon-cyan text-sm font-orbitron mb-2"
-                    htmlFor="video-length"
-                  >
+                  <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="video-length">
                     VIDEO LENGTH
                   </label>
                   <input
-                    {...register("videoLength")}
+                    {...register('videoLength')}
                     id="video-length"
                     placeholder="MM:SS (e.g. 04:32)"
                     className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
                   />
-                  {errors.videoLength && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.videoLength.message}
-                    </p>
-                  )}
                 </div>
               )}
-
+              
               <div>
-                <label
-                  className="block text-neon-cyan text-sm font-orbitron mb-2"
-                  htmlFor="project-url"
-                >
+                <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-url">
                   PROJECT URL
                 </label>
                 <input
-                  {...register("url")}
+                  {...register('url')}
                   id="project-url"
                   type="url"
                   placeholder="https://"
                   className="w-full bg-cyber-dark border border-neon-cyan/30 focus:border-neon-cyan p-3 rounded-sm text-cyber-text focus:outline-none text-sm"
                 />
                 {errors.url && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.url.message}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.url.message as string}</p>
                 )}
               </div>
-
+              
               <div>
-                <label
-                  className="block text-neon-cyan text-sm font-orbitron mb-2"
-                  htmlFor="project-thumbnail"
-                >
+                <label className="block text-neon-cyan text-sm font-orbitron mb-2" htmlFor="project-thumbnail">
                   THUMBNAIL
                 </label>
                 <div className="flex items-center space-x-3">
@@ -285,7 +238,7 @@ export default function AddProjectForm() {
                     />
                     <div className="flex items-center justify-between">
                       <span className="text-cyber-text/60">
-                        {thumbnailPreview ? "File selected" : "Choose file..."}
+                        {thumbnailPreview ? 'File selected' : 'Choose file...'}
                       </span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -305,29 +258,19 @@ export default function AddProjectForm() {
                   </div>
                 </div>
                 {errors.thumbnail && (
-                  <p
-                    className="text-red-5
-
-00 text-xs mt-1"
-                  >
-                    {errors.thumbnail.message}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.thumbnail.message as string}</p>
                 )}
-
+                
                 {thumbnailPreview && (
                   <div className="mt-2">
                     <div className="relative w-20 h-20 rounded-sm overflow-hidden">
-                      <img
-                        src={thumbnailPreview}
-                        alt="Thumbnail preview"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={thumbnailPreview} alt="Thumbnail preview" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 )}
               </div>
             </div>
-
+            
             <div className="flex justify-end pt-4">
               <Button
                 type="submit"
@@ -335,9 +278,7 @@ export default function AddProjectForm() {
                 size="lg"
                 disabled={isUploading || createProject.isPending}
               >
-                {isUploading || createProject.isPending
-                  ? "ADDING..."
-                  : "ADD PROJECT"}
+                {isUploading || createProject.isPending ? 'ADDING...' : 'ADD PROJECT'}
               </Button>
             </div>
           </form>
