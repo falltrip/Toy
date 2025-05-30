@@ -9,7 +9,7 @@ import AddProjectForm from "@/components/AddProjectForm";
 import { Project } from "@shared/schema";
 
 const fetchProjects = async (): Promise<Project[]> => {
-  const response = await fetch("/data/projects.json");
+  const response = await fetch("/Toy/data/projects.json"); // base="/Toy"를 고려한 경로
   if (!response.ok) {
     throw new Error("Failed to fetch projects");
   }

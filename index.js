@@ -9,8 +9,8 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-var __dirname2 = path.dirname(fileURLToPath(import.meta.url));
-var UPLOAD_DIR = path.join(__dirname2, "..", "uploads");
+var __dirname = path.dirname(fileURLToPath(import.meta.url));
+var UPLOAD_DIR = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -263,8 +263,8 @@ import path2 from "path";
 import fs2 from "fs";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import express from "express";
-var __dirname3 = path2.dirname(fileURLToPath2(import.meta.url));
-var UPLOAD_DIR2 = path2.join(__dirname3, "..", "uploads");
+var __dirname2 = path2.dirname(fileURLToPath2(import.meta.url));
+var UPLOAD_DIR2 = path2.join(__dirname2, "..", "uploads");
 if (!fs2.existsSync(UPLOAD_DIR2)) {
   fs2.mkdirSync(UPLOAD_DIR2, { recursive: true });
 }
@@ -408,18 +408,21 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path3 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
+var __filename = fileURLToPath3(import.meta.url);
+var __dirname3 = path3.dirname(__filename);
 var vite_config_default = defineConfig({
   plugins: [react()],
-  root: path3.resolve(__dirname, "client"),
+  root: path3.resolve(__dirname3, "client"),
   // /client을 루트로 설정
   base: "/Toy/",
   // GitHub Pages 경로
-  publicDir: "public",
-  // 명시적으로 /client/public 폴더를 사용
+  publicDir: path3.resolve(__dirname3, "client/public"),
+  // 절대 경로로 /client/public 지정
   resolve: {
     alias: {
-      "@": path3.resolve(__dirname, "client/src"),
-      "@shared": path3.resolve(__dirname, "shared")
+      "@": path3.resolve(__dirname3, "client/src"),
+      "@shared": path3.resolve(__dirname3, "shared")
     }
   },
   build: {
@@ -428,7 +431,7 @@ var vite_config_default = defineConfig({
     emptyOutDir: true,
     // 이전 빌드 파일 제거
     rollupOptions: {
-      input: path3.resolve(__dirname, "client/index.html")
+      input: path3.resolve(__dirname3, "client/index.html")
       // 명시적으로 index.html 지정
     }
   }
