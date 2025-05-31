@@ -322,7 +322,7 @@ export default function Hero() {
                   transition={{ delay: 1.1, duration: 0.8 }}
                   className="text-2xl md:text-3xl lg:text-4xl tracking-wider text-neon-cyan font-orbitron font-bold text-left"
                 >
-                  Your Imagination Hub ~~~
+                  Your Imagination Hub ~!!!
                 </motion.h2>
 
                 <motion.p
