@@ -1,0 +1,18 @@
+[
+    {
+      "id": "1",
+      "title": "Sample App",
+      "description": "A sample app for testing",
+      "category": "app",
+      "createdAt": "2025-05-30T00:00:00Z",
+      "tag": "productivity"
+    },
+    {
+      "id": "2",
+      "title": "Sample Game",
+      "description": "A sample game for testing",
+      "category": "game",
+      "createdAt": "2025-05-29T00:00:00Z",
+      "tag": "adventure"
+    }
+  ]
