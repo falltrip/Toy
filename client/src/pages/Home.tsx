@@ -8,24 +8,34 @@ import ProjectCard from "@/components/ProjectCard";
 import AddProjectForm from "@/components/AddProjectForm";
 import { Project } from "@shared/schema";
 
+const fetchProjects = async (): Promise<Project[]> => {
+  const response = await fetch("/Toy/data/projects.json"); // base="/Toy" 반영
+  if (!response.ok) {
+    throw new Error("Failed to fetch projects");
+  }
+  return response.json();
+};
+
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<string>("newest");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  // Fetch all projects
-  const { data: projects = [], isLoading, error } = useQuery<Project[]>({
-    queryKey: ['/api/projects'],
+  // Fetch all projects from the static JSON file
+  const {
+    data: projects = [],
+    isLoading,
+    error,
+  } = useQuery<Project[]>({
+    queryKey: ["projects"],
+    queryFn: fetchProjects,
   });
 
   // Filter and sort projects
-  const filteredProjects = projects.filter(project => {
-    // Category filter
+  const filteredProjects = projects.filter((project) => {
     if (selectedCategory !== "all" && project.category !== selectedCategory) {
       return false;
     }
-    
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -34,7 +44,6 @@ export default function Home() {
         (project.tag && project.tag.toLowerCase().includes(query))
       );
     }
-    
     return true;
   });
 
@@ -42,9 +51,13 @@ export default function Home() {
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortOrder) {
       case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
       case "az":
         return a.title.localeCompare(b.title);
       case "za":
@@ -54,24 +67,22 @@ export default function Home() {
     }
   });
 
-  // Group projects by category for display
-  const appProjects = sortedProjects.filter(p => p.category === 'app');
-  const gameProjects = sortedProjects.filter(p => p.category === 'game');
-  const imageProjects = sortedProjects.filter(p => p.category === 'image');
-  const videoProjects = sortedProjects.filter(p => p.category === 'video');
-  const etcProjects = sortedProjects.filter(p => p.category === 'etc');
+  const appProjects = sortedProjects.filter((p) => p.category === "app");
+  const gameProjects = sortedProjects.filter((p) => p.category === "game");
+  const imageProjects = sortedProjects.filter((p) => p.category === "image");
+  const videoProjects = sortedProjects.filter((p) => p.category === "video");
+  const etcProjects = sortedProjects.filter((p) => p.category === "etc");
 
   return (
     <main className="pt-24 pb-12">
       <Hero />
-      
+
       <FilterBar
         onCategoryChange={setSelectedCategory}
         onSortChange={setSortOrder}
         onSearchChange={setSearchQuery}
       />
 
-      {/* Display filtered projects (when a filter is active) */}
       {(selectedCategory !== "all" || searchQuery) && (
         <section className="py-16 px-4">
           <div className="container mx-auto">
@@ -81,7 +92,8 @@ export default function Home() {
                 <div className="h-[2px] w-full bg-neon-cyan mt-2"></div>
               </h2>
               <p className="text-cyber-text/80 mt-4">
-                {sortedProjects.length} {sortedProjects.length === 1 ? 'project' : 'projects'} found
+                {sortedProjects.length}{" "}
+                {sortedProjects.length === 1 ? "project" : "projects"} found
               </p>
             </div>
 
@@ -91,15 +103,23 @@ export default function Home() {
               </div>
             ) : error ? (
               <div className="bg-cyber-slate p-6 border border-red-500/30 rounded-sm">
-                <h3 className="text-xl font-orbitron text-red-500 mb-2">Error</h3>
-                <p className="text-cyber-text/80">Failed to load projects. Please try again later.</p>
+                <h3 className="text-xl font-orbitron text-red-500 mb-2">
+                  Error
+                </h3>
+                <p className="text-cyber-text/80">
+                  Failed to load projects. Please try again later.
+                </p>
               </div>
             ) : sortedProjects.length === 0 ? (
               <div className="bg-cyber-slate p-8 border border-neon-cyan/30 rounded-sm text-center">
-                <h3 className="text-xl font-orbitron text-neon-cyan mb-4">No Projects Found</h3>
-                <p className="text-cyber-text/80 mb-6">Try adjusting your filters or search query.</p>
-                <Button 
-                  variant="neon" 
+                <h3 className="text-xl font-orbitron text-neon-cyan mb-4">
+                  No Projects Found
+                </h3>
+                <p className="text-cyber-text/80 mb-6">
+                  Try adjusting your filters or search query.
+                </p>
+                <Button
+                  variant="neon"
                   onClick={() => {
                     setSelectedCategory("all");
                     setSearchQuery("");
@@ -111,7 +131,11 @@ export default function Home() {
             ) : (
               <div className="grid-masonry">
                 {sortedProjects.map((project, index) => (
-                  <ProjectCard key={project.id} project={project} index={index} />
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    index={index}
+                  />
                 ))}
               </div>
             )}
@@ -119,13 +143,12 @@ export default function Home() {
         </section>
       )}
 
-      {/* Only render category sections when not filtering */}
       {selectedCategory === "all" && !searchQuery && (
         <>
           {/* App Section */}
           <section id="app" className="py-16 px-4">
             <div className="container mx-auto">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -137,36 +160,49 @@ export default function Home() {
                   <div className="h-[2px] w-full bg-neon-magenta mt-2"></div>
                 </h2>
                 <p className="text-cyber-text/80 mt-4 max-w-3xl">
-                  Interactive web applications and tools designed for various purposes - from productivity to creative experimentation.
+                  Interactive web applications and tools designed for various
+                  purposes - from productivity to creative experimentation.
                 </p>
               </motion.div>
-              
+
               {isLoading ? (
                 <div className="flex justify-center py-20">
                   <div className="text-neon-cyan">Loading applications...</div>
                 </div>
               ) : error ? (
                 <div className="bg-cyber-slate p-6 border border-red-500/30 rounded-sm">
-                  <h3 className="text-xl font-orbitron text-red-500 mb-2">Error</h3>
-                  <p className="text-cyber-text/80">Failed to load applications. Please try again later.</p>
+                  <h3 className="text-xl font-orbitron text-red-500 mb-2">
+                    Error
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Failed to load applications. Please try again later.
+                  </p>
                 </div>
               ) : appProjects.length === 0 ? (
                 <div className="bg-cyber-slate p-8 border border-neon-magenta/30 rounded-sm text-center">
-                  <h3 className="text-xl font-orbitron text-neon-magenta mb-4">No Applications Yet</h3>
-                  <p className="text-cyber-text/80">Applications will appear here once added.</p>
+                  <h3 className="text-xl font-orbitron text-neon-magenta mb-4">
+                    No Applications Yet
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Applications will appear here once added.
+                  </p>
                 </div>
               ) : (
                 <div className="grid-masonry">
                   {appProjects.slice(0, 3).map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
               )}
-              
+
               {appProjects.length > 3 && (
                 <div className="mt-10 text-center">
-                  <Button 
-                    variant="neonMagenta" 
+                  <Button
+                    variant="neonMagenta"
                     size="lg"
                     onClick={() => {
                       setSelectedCategory("app");
@@ -182,7 +218,7 @@ export default function Home() {
           {/* Game Section */}
           <section id="game" className="py-16 px-4 bg-cyber-dark/50">
             <div className="container mx-auto">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -194,36 +230,49 @@ export default function Home() {
                   <div className="h-[2px] w-full bg-neon-yellow mt-2"></div>
                 </h2>
                 <p className="text-cyber-text/80 mt-4 max-w-3xl">
-                  Browser-based games and interactive experiences designed to challenge and entertain.
+                  Browser-based games and interactive experiences designed to
+                  challenge and entertain.
                 </p>
               </motion.div>
-              
+
               {isLoading ? (
                 <div className="flex justify-center py-20">
                   <div className="text-neon-cyan">Loading games...</div>
                 </div>
               ) : error ? (
                 <div className="bg-cyber-slate p-6 border border-red-500/30 rounded-sm">
-                  <h3 className="text-xl font-orbitron text-red-500 mb-2">Error</h3>
-                  <p className="text-cyber-text/80">Failed to load games. Please try again later.</p>
+                  <h3 className="text-xl font-orbitron text-red-500 mb-2">
+                    Error
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Failed to load games. Please try again later.
+                  </p>
                 </div>
               ) : gameProjects.length === 0 ? (
                 <div className="bg-cyber-slate p-8 border border-neon-yellow/30 rounded-sm text-center">
-                  <h3 className="text-xl font-orbitron text-neon-yellow mb-4">No Games Yet</h3>
-                  <p className="text-cyber-text/80">Games will appear here once added.</p>
+                  <h3 className="text-xl font-orbitron text-neon-yellow mb-4">
+                    No Games Yet
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Games will appear here once added.
+                  </p>
                 </div>
               ) : (
                 <div className="grid-masonry">
                   {gameProjects.slice(0, 3).map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
               )}
-              
+
               {gameProjects.length > 3 && (
                 <div className="mt-10 text-center">
-                  <Button 
-                    variant="neonYellow" 
+                  <Button
+                    variant="neonYellow"
                     size="lg"
                     onClick={() => {
                       setSelectedCategory("game");
@@ -239,7 +288,7 @@ export default function Home() {
           {/* Image Section */}
           <section id="image" className="py-16 px-4">
             <div className="container mx-auto">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -251,36 +300,49 @@ export default function Home() {
                   <div className="h-[2px] w-full bg-neon-green mt-2"></div>
                 </h2>
                 <p className="text-cyber-text/80 mt-4 max-w-3xl">
-                  Digital artwork, generative designs, and visual experiments exploring the intersection of technology and art.
+                  Digital artwork, generative designs, and visual experiments
+                  exploring the intersection of technology and art.
                 </p>
               </motion.div>
-              
+
               {isLoading ? (
                 <div className="flex justify-center py-20">
                   <div className="text-neon-cyan">Loading images...</div>
                 </div>
               ) : error ? (
                 <div className="bg-cyber-slate p-6 border border-red-500/30 rounded-sm">
-                  <h3 className="text-xl font-orbitron text-red-500 mb-2">Error</h3>
-                  <p className="text-cyber-text/80">Failed to load images. Please try again later.</p>
+                  <h3 className="text-xl font-orbitron text-red-500 mb-2">
+                    Error
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Failed to load images. Please try again later.
+                  </p>
                 </div>
               ) : imageProjects.length === 0 ? (
                 <div className="bg-cyber-slate p-8 border border-neon-green/30 rounded-sm text-center">
-                  <h3 className="text-xl font-orbitron text-neon-green mb-4">No Images Yet</h3>
-                  <p className="text-cyber-text/80">Images will appear here once added.</p>
+                  <h3 className="text-xl font-orbitron text-neon-green mb-4">
+                    No Images Yet
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Images will appear here once added.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {imageProjects.slice(0, 6).map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
               )}
-              
+
               {imageProjects.length > 6 && (
                 <div className="mt-10 text-center">
-                  <Button 
-                    variant="neonGreen" 
+                  <Button
+                    variant="neonGreen"
                     size="lg"
                     onClick={() => {
                       setSelectedCategory("image");
@@ -296,7 +358,7 @@ export default function Home() {
           {/* Video Section */}
           <section id="video" className="py-16 px-4 bg-cyber-dark/50">
             <div className="container mx-auto">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -308,36 +370,49 @@ export default function Home() {
                   <div className="h-[2px] w-full bg-neon-blue mt-2"></div>
                 </h2>
                 <p className="text-cyber-text/80 mt-4 max-w-3xl">
-                  Motion graphics, animations, and visual storytelling through the digital medium.
+                  Motion graphics, animations, and visual storytelling through
+                  the digital medium.
                 </p>
               </motion.div>
-              
+
               {isLoading ? (
                 <div className="flex justify-center py-20">
                   <div className="text-neon-cyan">Loading videos...</div>
                 </div>
               ) : error ? (
                 <div className="bg-cyber-slate p-6 border border-red-500/30 rounded-sm">
-                  <h3 className="text-xl font-orbitron text-red-500 mb-2">Error</h3>
-                  <p className="text-cyber-text/80">Failed to load videos. Please try again later.</p>
+                  <h3 className="text-xl font-orbitron text-red-500 mb-2">
+                    Error
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Failed to load videos. Please try again later.
+                  </p>
                 </div>
               ) : videoProjects.length === 0 ? (
                 <div className="bg-cyber-slate p-8 border border-neon-blue/30 rounded-sm text-center">
-                  <h3 className="text-xl font-orbitron text-neon-blue mb-4">No Videos Yet</h3>
-                  <p className="text-cyber-text/80">Videos will appear here once added.</p>
+                  <h3 className="text-xl font-orbitron text-neon-blue mb-4">
+                    No Videos Yet
+                  </h3>
+                  <p className="text-cyber-text/80">
+                    Videos will appear here once added.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {videoProjects.slice(0, 4).map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
               )}
-              
+
               {videoProjects.length > 4 && (
                 <div className="mt-10 text-center">
-                  <Button 
-                    variant="neonBlue" 
+                  <Button
+                    variant="neonBlue"
                     size="lg"
                     onClick={() => {
                       setSelectedCategory("video");
@@ -354,7 +429,7 @@ export default function Home() {
           {etcProjects.length > 0 && (
             <section id="etc" className="py-16 px-4">
               <div className="container mx-auto">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -366,20 +441,25 @@ export default function Home() {
                     <div className="h-[2px] w-full bg-neon-magenta mt-2"></div>
                   </h2>
                   <p className="text-cyber-text/80 mt-4 max-w-3xl">
-                    Other experimental works and projects that don't fit into standard categories.
+                    Other experimental works and projects that don't fit into
+                    standard categories.
                   </p>
                 </motion.div>
-                
+
                 <div className="grid-masonry">
                   {etcProjects.slice(0, 3).map((project, index) => (
-                    <ProjectCard key={project.id} project={project} index={index} />
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
-                
+
                 {etcProjects.length > 3 && (
                   <div className="mt-10 text-center">
-                    <Button 
-                      variant="neonMagenta" 
+                    <Button
+                      variant="neonMagenta"
                       size="lg"
                       onClick={() => {
                         setSelectedCategory("etc");
@@ -392,11 +472,11 @@ export default function Home() {
               </div>
             </section>
           )}
-          
+
           {/* Add Project Form */}
           <section id="add-project" className="py-16 px-4 bg-cyber-black">
             <div className="container mx-auto max-w-4xl">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -408,10 +488,11 @@ export default function Home() {
                   <div className="h-[2px] w-full bg-neon-cyan mt-2"></div>
                 </h2>
                 <p className="text-cyber-text/80 mt-4 max-w-3xl mx-auto">
-                  Share your digital creation with the TOY FACTORY community. Upload your work and let it become part of the experience.
+                  Share your digital creation with the TOY FACTORY community.
+                  Upload your work and let it become part of the experience.
                 </p>
               </motion.div>
-              
+
               <AddProjectForm />
             </div>
           </section>
